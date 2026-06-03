@@ -1,0 +1,40 @@
+name: Deploy web demo
+
+# Builds the example app as a Flutter web release and publishes it to the
+# gh-pages branch. stephens.page serves a checkout of that branch at
+# https://countdown.stephens.page. There is no Flutter SDK on the server, so
+# this runner is the only place the web bundle is produced.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Generate web scaffolding and build
+        working-directory: example
+        run: |
+          flutter create --platforms=web --project-name=countdown_ring_example .
+          flutter pub get
+          flutter build web --release
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: example/build/web
+          publish_branch: gh-pages
+          force_orphan: true
